@@ -12,6 +12,7 @@ public class Astronaut {
     private String gender;
 
     @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "contact_email", referencedColumnName = "emailAddress")
     private Contact contact;
 
     @Embedded

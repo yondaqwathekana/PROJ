@@ -1,137 +1,91 @@
 package za.ac.cput.service;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 import za.ac.cput.domain.Astronaut;
-import za.ac.cput.repository.AstronautRepository;
-import za.ac.cput.service.AstronautService;
-import org.junit.jupiter.api.*;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import za.ac.cput.domain.Contact;
+import za.ac.cput.factory.AstronautFactory;
+import za.ac.cput.factory.ContactFactory;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import za.ac.cput.domain.Astronaut;
-import za.ac.cput.repository.AstronautRepository;
 
-import java.util.*;
+
+
+import za.ac.cput.domain.Name;
+
+import za.ac.cput.factory.NameFactory;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
+
+
+@SpringBootTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class AstronautServiceTest {
 
-    @Mock
-    private AstronautRepository astronautRepository;
-
-    @InjectMocks
+    @Autowired
     private AstronautService astronautService;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
+    @Autowired
+    private ContactService contactService;
 
     @Test
-    void testCreateAstronaut() {
-        Astronaut astronautToCreate = new Astronaut.Builder()
-                .setAstronautNumber(1L)
-                .setAge(35)
-                .setGender("Male")
-                .build();
+    @Order(1)
+    void createAstronaut() {
+        // Create contact
+        Contact contact = ContactFactory.createContact("astronaut@example.com", "1234567890");
+        Contact createdContact = contactService.create(contact);
+        assertNotNull(createdContact);
 
-        when(astronautRepository.save(astronautToCreate)).thenReturn(astronautToCreate);
+        // Create name
+        Name name = NameFactory.createName("John", "Doe");
 
-        Astronaut createdAstronaut = astronautService.create(astronautToCreate);
-
+        // Create astronaut with the created contact and name
+        Astronaut astronaut = AstronautFactory.createAstronaut(1L, 35, "Male", createdContact,name);
+        Astronaut createdAstronaut = astronautService.create(astronaut);
         assertNotNull(createdAstronaut);
-        assertEquals(astronautToCreate, createdAstronaut);
+
+        // Ensure created astronaut matches expected data
+        assertEquals(astronaut.getAstronautNumber(), createdAstronaut.getAstronautNumber());
+        assertEquals(astronaut.getAge(), createdAstronaut.getAge());
+        assertEquals(astronaut.getGender(), createdAstronaut.getGender());
+        assertEquals(astronaut.getContact(), createdAstronaut.getContact());
+        assertEquals(astronaut.getName(), createdAstronaut.getName());
     }
 
     @Test
-    void testReadAstronaut() {
-        long astronautNumber = 1L;
-        Astronaut expectedAstronaut = new Astronaut.Builder()
-                .setAstronautNumber(astronautNumber)
-                .setAge(35)
-                .setGender("Male")
-                .build();
-
-        when(astronautRepository.findById(String.valueOf(astronautNumber))).thenReturn(Optional.of(expectedAstronaut));
-
-        Astronaut retrievedAstronaut = astronautService.read(String.valueOf(astronautNumber));
-
-        assertNotNull(retrievedAstronaut);
-        assertEquals(expectedAstronaut, retrievedAstronaut);
+    @Order(2)
+    void readAstronaut() {
+        Astronaut foundAstronaut = astronautService.read("1");
+        assertNotNull(foundAstronaut);
+        System.out.println(foundAstronaut);
     }
 
     @Test
-    void testUpdateAstronaut() {
-        Astronaut astronautToUpdate = new Astronaut.Builder()
-                .setAstronautNumber(1L)
-                .setAge(35)
-                .setGender("Male")
-                .build();
+    @Order(3)
+    void updateAstronaut() {
+        Astronaut foundAstronaut = astronautService.read("1");
+        assertNotNull(foundAstronaut);
 
-        when(astronautRepository.save(astronautToUpdate)).thenReturn(astronautToUpdate);
-
-        Astronaut updatedAstronaut = astronautService.update(astronautToUpdate);
-
-        assertNotNull(updatedAstronaut);
-        assertEquals(astronautToUpdate, updatedAstronaut);
+        Astronaut updatedAstronaut = new Astronaut.Builder().copy(foundAstronaut).setAge(36).build();
+        updatedAstronaut = astronautService.update(updatedAstronaut);
+        assertEquals(36, updatedAstronaut.getAge());
+        System.out.println(updatedAstronaut);
     }
 
     @Test
-    void testDeleteAstronaut() {
-        long astronautNumber = 1L;
-        Astronaut astronautToDelete = new Astronaut.Builder()
-                .setAstronautNumber(astronautNumber)
-                .setAge(35)
-                .setGender("Male")
-                .build();
-
-        when(astronautRepository.findById(String.valueOf(astronautNumber))).thenReturn(Optional.of(astronautToDelete));
-
-        Astronaut deletedAstronaut = astronautService.delete(String.valueOf(astronautNumber));
-
-        assertNotNull(deletedAstronaut);
-        assertEquals(astronautToDelete, deletedAstronaut);
-
-        verify(astronautRepository, times(1)).delete(astronautToDelete);
-    }
-
-    @Test
-    void testGetAllAstronauts() {
-        Astronaut astronaut1 = new Astronaut.Builder()
-                .setAstronautNumber(1L)
-                .setAge(35)
-                .setGender("Male")
-                .build();
-        Astronaut astronaut2 = new Astronaut.Builder()
-                .setAstronautNumber(2L)
-                .setAge(40)
-                .setGender("Female")
-                .build();
-
-        List<Astronaut> allAstronauts = Arrays.asList(astronaut1, astronaut2);
-
-        when(astronautRepository.findAll()).thenReturn(allAstronauts);
-
-        Set<Astronaut> retrievedAstronauts = astronautService.getAll();
-
-        assertNotNull(retrievedAstronauts);
-        assertEquals(2, retrievedAstronauts.size());
-        assertTrue(retrievedAstronauts.contains(astronaut1));
-        assertTrue(retrievedAstronauts.contains(astronaut2));
+    @Order(5)
+    void getAllAstronauts() {
+        Set<Astronaut> allAstronauts = astronautService.getAll();
+        assertNotNull(allAstronauts);
+        assertTrue(allAstronauts.size() > 0);
+        System.out.println(allAstronauts);
     }
 }

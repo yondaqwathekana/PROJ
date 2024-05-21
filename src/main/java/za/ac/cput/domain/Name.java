@@ -1,16 +1,12 @@
 package za.ac.cput.domain;
 
 import jakarta.persistence.Embeddable;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
 public class Name implements Serializable {
-    @Id
     private String firstName;
-    @Id
     private String lastName;
 
     protected Name() {}
@@ -20,15 +16,31 @@ public class Name implements Serializable {
         this.lastName = builder.lastName;
     }
 
-    public String getFirstName() { return firstName; }
-    public String getLastName() { return lastName; }
+    // Getters
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    // Setters
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
 
     @Override
     public boolean equals(Object object) {
         if (this == object) return true;
         if (object == null || getClass() != object.getClass()) return false;
         Name name = (Name) object;
-        return Objects.equals(firstName, name.firstName) && Objects.equals(lastName, name.lastName);
+        return Objects.equals(firstName, name.firstName) &&
+                Objects.equals(lastName, name.lastName);
     }
 
     @Override
